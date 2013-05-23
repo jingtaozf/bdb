@@ -9,7 +9,7 @@
  #-elephant-without-optimize (optimize (speed 3) (safety 0))
  #-lispworks
  (inline %db-get-key-buffered db-get-key-buffered
-		 %db-get-buffered db-get-buffered db-get
+		 db-get
 		 %db-put-buffered db-put-buffered
 		 %db-put db-put
 		 %db-delete db-delete-buffered db-delete
@@ -715,46 +715,6 @@ decoding, or NIL if nothing was found."
        ((> result-size value-length)
 	(resize-buffer-stream-no-copy value-buffer-stream result-size))
        (t (error 'bdb-db-error :errno errno))))))
-
-(defun db-get-buffered (db key value-buffer-stream &key
-			(key-size (length key))
-			(transaction (txn-default *current-transaction*))
-			get-both degree-2 read-committed
-			dirty-read read-uncommitted)
-  "Get a key / value pair from a DB.  The key is passed as a
-string.  Space for the value is passed in as a
-buffer-stream.  On success the buffer-stream is returned for
-decoding, or NIL if nothing was found."
-  (declare (type pointer-void db transaction)
-	   (type string key)
-	   (type buffer-stream value-buffer-stream)
-	   (type fixnum key-size)
-	   (type boolean get-both degree-2 read-committed
-		 dirty-read read-uncommitted))
-  (with-cstring (k key)
-    (loop
-     for value-length fixnum = (buffer-stream-length value-buffer-stream)
-     do
-     (multiple-value-bind (errno result-size)
-	 (%db-get-buffered db transaction k key-size
-			   (buffer-stream-buffer value-buffer-stream)
-			   value-length
-			   (flags :get-both get-both
-				  :degree-2 (or degree-2 read-committed)
-				  :dirty-read (or dirty-read read-uncommitted)))
-       (declare (type fixnum result-size errno))
-       (cond
-	 ((= errno 0)
-	  (setf (buffer-stream-size value-buffer-stream) result-size)
-	  (return-from db-get-buffered
-	    (the buffer-stream value-buffer-stream)))
-	 ((or (= errno DB_NOTFOUND) (= errno DB_KEYEMPTY))
-	  (return-from db-get-buffered nil))
-	 ((or (= errno DB_LOCK_DEADLOCK) (= errno DB_LOCK_NOTGRANTED))
-	  (throw 'transaction transaction))
-	 ((> result-size value-length)
-	  (resize-buffer-stream-no-copy value-buffer-stream result-size))
-	 (t (error 'bdb-db-error :errno errno)))))))
 
 (defun db-get (db key &key (transaction (txn-default *current-transaction*))
                   get-both degree-2 read-committed
@@ -1894,8 +1854,3 @@ function for Elephant to compare lisp values.")
     (if (< ret 0)
 	(error 'bdb-db-error :errno ret)
 	ret)))
-
-(def-function ("db_env_cr" %db-env-create)
-    ((flags :unsigned-int)
-     (errno :int :out))
-  :returning :pointer-void)

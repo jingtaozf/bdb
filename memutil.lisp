@@ -110,29 +110,30 @@
   (proclaim '(optimize (ext:inhibit-warnings 3))))
 
 (eval-when (:compile-toplevel :load-toplevel)
-  (def-type pointer-int (* :int))
-  (def-type pointer-void :pointer-void)
-  (def-foreign-type array-or-pointer-char
-      #+(or allegro) (:array :unsigned-char)
-      #+(or cmu sbcl scl openmcl lispworks) (* :unsigned-char))
-  (def-type array-or-pointer-char array-or-pointer-char)
+  (let (#+lispworks(lw:*handle-warn-on-redefinition* :quiet))
+    (def-type pointer-int (* :int))
+    (def-type pointer-void :pointer-void)
+    (def-foreign-type array-or-pointer-char
+        #+(or allegro) (:array :unsigned-char)
+        #+(or cmu sbcl scl openmcl lispworks) (* :unsigned-char))
+    (def-type array-or-pointer-char array-or-pointer-char)
 
-  ;; Standard utility for copying two foreign buffers --
-  ;;   also to test that lib is actually loaded!
-  (def-function ("copy_buf" copy-bufs)
-      ((dest array-or-pointer-char)
-       (dest-offset :int)
-       (src array-or-pointer-char)
-       (src-offset :int)
-       (length :int))
-    :returning :void))
+    ;; Standard utility for copying two foreign buffers --
+    ;;   also to test that lib is actually loaded!
+    (def-function ("copy_buf" copy-bufs)
+        ((dest array-or-pointer-char)
+         (dest-offset :int)
+         (src array-or-pointer-char)
+         (src-offset :int)
+         (length :int))
+      :returning :void)))
 
 (eval-when (:compile-toplevel)
   (declaim
    #-elephant-without-optimize (optimize (speed 3) (safety 1) (space 0) (debug 0))
    (inline read-int read-uint read-float read-double
 	   write-int write-uint write-float write-double
-	   offset-char-pointer copy-str-to-buf %copy-str-to-buf copy-bufs
+	   offset-char-pointer copy-str-to-buf %copy-str-to-buf ;copy-bufs
 	   ;; resize-buffer-stream
 	   ;; buffer-stream-buffer buffer-stream-size buffer-stream-position
 	   ;; buffer-stream-length
@@ -187,6 +188,12 @@
       (make-buffer-stream)
       (ele-with-fast-lock (*buffer-streams-lock*)
 	(vector-pop *buffer-streams*))))
+
+(defun reset-buffer-stream (bs)
+  "'Empty' the buffer-stream."
+  (declare (type buffer-stream bs))
+  (setf (buffer-stream-size bs) 0)
+  (setf (buffer-stream-position bs) 0))
 
 (defun return-buffer-stream (bs)
   "Return a buffer-stream to the *buffer-streams* resource pool."
@@ -553,7 +560,6 @@ of a string."
   (declare (type buffer-stream bs)
 	   (type fixnum length))
   (with-struct-slots ((buf buffer-stream-buffer)
-		      (size buffer-stream-size)
 		      (len buffer-stream-length))
     bs
     (when (> length len)
@@ -566,12 +572,6 @@ of a string."
 	  (setf buf newbuf)
 	  (setf len newlen)
 	  nil)))))
-
-(defun reset-buffer-stream (bs)
-  "'Empty' the buffer-stream."
-  (declare (type buffer-stream bs))
-  (setf (buffer-stream-size bs) 0)
-  (setf (buffer-stream-position bs) 0))
 
 (defun buffer-write-byte (b bs)
   "Write a byte."
@@ -771,10 +771,6 @@ of a string."
 ;; Legacy support
 ;;
 
-(defun buffer-read-int (bs)
-  ;; deprecated, better to use explicit int32 or int64 version
-  (buffer-read-int32 bs))
-
 (defun buffer-read-fixnum (bs)
   ;; deprecated, better to use explicit int32 or int64 version
   (the fixnum (buffer-read-fixnum32 bs)))
@@ -782,10 +778,6 @@ of a string."
 (defun buffer-write-int (int bs)
   ;; deprecated, better to use explicit int32 or int64 version
   (buffer-write-int32 int bs))
-
-(defun buffer-read-uint (bs)
-  ;; deprecated, better to use explicit int32 or int64 version
-  (buffer-read-uint32 bs))
 
 (defun buffer-write-uint (int bs)
   ;; deprecated, better to use explicit int32 or int64 version
@@ -808,12 +800,21 @@ of a string."
     (setf (buffer-stream-position bs) (+ position 4))
     (the (signed-byte 32) (read-int32 (buffer-stream-buffer bs) position))))
 
+(defun buffer-read-int (bs)
+  ;; deprecated, better to use explicit int32 or int64 version
+  (buffer-read-int32 bs))
+
+
 (defun buffer-read-uint32 (bs)
   "Read a 32-bit unsigned integer."
   (declare (type buffer-stream bs))
   (let ((position (buffer-stream-position bs)))
     (setf (buffer-stream-position bs) (+ position 4))
     (the (unsigned-byte 32)(read-uint32 (buffer-stream-buffer bs) position))))
+
+(defun buffer-read-uint (bs)
+  ;; deprecated, better to use explicit int32 or int64 version
+  (buffer-read-uint32 bs))
 
 (defun buffer-read-fixnum64 (bs)
   (declare (type buffer-stream bs))

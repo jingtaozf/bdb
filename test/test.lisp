@@ -46,7 +46,7 @@
        (when (= 0 (mod i 5))
          (db-delete db key)
          (assert (not (db-exists db key)))))
-    (format t "done")
+    (format t "done~%")
     (db-close db)
     t))
 (defun test-object-get-put (&key (verbose t))
