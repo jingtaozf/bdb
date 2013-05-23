@@ -36,4 +36,13 @@
    #:db-exists
    #:db-delete
    #:DB-BTREE
+   #:register-store
+   #:unregister-store
+   #:get-store-category
+   #:dopen
+   #:dclose
+   #:dput
+   #:dget
+   #:dexists
+   #:ddel
    ))

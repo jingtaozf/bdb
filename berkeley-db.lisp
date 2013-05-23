@@ -417,13 +417,6 @@
     (with-db-errno nil 
         (%db-env-close dbenvp 0))))
 
-(defun db-env-close (dbenvp)
-  "Close an environment handle."
-  (with-cstrings nil
-    (with-db-errno nil
-        (%DB-ENV-CLOSE DBENVP 0))))
-
-
 (def-function ("db_env_open" %db-env-open)
     ((dbenvp :pointer-void)
      (home :cstring)
@@ -658,12 +651,20 @@ and DUP-SORT.")
 	(error 'bdb-db-error :errno errno))))
 
 ;;;; utf-8 support
-(defun encode-string (string)
+(defun string-to-buffer-stream (string)
   (declare (type string string))
-  (cl-base64:usb8-array-to-base64-string (flexi-streams:string-to-octets string :external-format :utf-8)))
-(defun decode-string (string)
-  (declare (type string string))
-  (flexi-streams:octets-to-string (cl-base64:base64-string-to-usb8-array string) :external-format :utf-8))
+  (let* ((buffer (flexi-streams:string-to-octets string :external-format :utf-8))
+         (buf-len (length buffer))
+         (stream (make-buffer-stream :buffer (allocate-foreign-object :unsigned-char buf-len) :length buf-len)))
+    (loop for c across buffer
+          do (buffer-write-byte c stream))
+    stream))
+(defun buffer-stream-to-string (stream)
+  (declare (type buffer-stream stream))
+  (loop with buf = (make-array (buffer-stream-size stream) :element-type 'flexi-streams:octet)
+        for i from 0 to (1- (buffer-stream-size stream))
+        do (setf (aref buf i) (buffer-read-byte stream))
+        finally (return (flexi-streams:octets-to-string buf :external-format :utf-8))))
 
 ;;;; Accessors
 
@@ -715,17 +716,6 @@ decoding, or NIL if nothing was found."
 	(resize-buffer-stream-no-copy value-buffer-stream result-size))
        (t (error 'bdb-db-error :errno errno))))))
 
-(def-function ("db_get_raw" %db-get-buffered)
-    ((db :pointer-void)
-     (txn :pointer-void)
-     (key :cstring)
-     (key-size :unsigned-int)
-     (buffer array-or-pointer-char)
-     (buffer-length :unsigned-int)
-     (flags :unsigned-int)
-     (result-size :unsigned-int :out))
-  :returning :int)
-
 (defun db-get-buffered (db key value-buffer-stream &key
 			(key-size (length key))
 			(transaction (txn-default *current-transaction*))
@@ -776,37 +766,33 @@ is found, NIL is returned."
 	   (type string key)
 	   (type boolean get-both degree-2 read-committed
 		 dirty-read read-uncommitted))
-  (let* ((key (encode-string key))
-         (key-size (length key)))
-    (declare (type string key)
-             (type fixnum key-size))
-    (with-cstring (k key)
-      (with-buffer-streams (value-buffer-stream)
-        (loop
-          for value-length fixnum = (buffer-stream-length value-buffer-stream)
+  (let* ((key-buffer-stream (string-to-buffer-stream key))
+         (value-buffer-stream (make-buffer-stream)))
+    (declare (type buffer-stream key-buffer-stream value-buffer-stream))
+    (loop for value-length fixnum = (buffer-stream-length value-buffer-stream)
           do
        (multiple-value-bind (errno result-size)
-	   (%db-get-buffered db transaction k key-size
-			     (buffer-stream-buffer value-buffer-stream)
-			     value-length
-			     (flags :get-both get-both
-				    :degree-2 (or degree-2 read-committed)
-				    :dirty-read (or dirty-read read-uncommitted)))
+	   (%db-get-key-buffered db transaction
+                                 (buffer-stream-buffer key-buffer-stream)
+                                 (buffer-stream-size key-buffer-stream)
+                                 (buffer-stream-buffer value-buffer-stream)
+                                 value-length
+                                 (flags :get-both get-both
+                                        :degree-2 (or degree-2 read-committed)
+                                        :dirty-read (or dirty-read read-uncommitted)))
 	 (declare (type fixnum result-size errno))
 	 (cond
 	   ((= errno 0)
+            (setf (buffer-stream-size value-buffer-stream) result-size)
 	    (return-from db-get
-	      (decode-string (convert-from-foreign-string (buffer-stream-buffer
-                                                           value-buffer-stream)
-                                                          :length result-size
-                                                          :null-terminated-p nil))))
+	      (buffer-stream-to-string value-buffer-stream)))
 	   ((or (= errno DB_NOTFOUND) (= errno DB_KEYEMPTY))
 	    (return-from db-get nil))
 	   ((or (= errno DB_LOCK_DEADLOCK) (= errno DB_LOCK_NOTGRANTED))
 	    (throw 'transaction transaction))
 	   ((> result-size value-length)
 	    (resize-buffer-stream-no-copy value-buffer-stream result-size))
-	   (t (error 'bdb-db-error :errno errno)))))))))
+	   (t (error 'bdb-db-error :errno errno)))))))
 
 (def-function ("db_put_raw" %db-put-buffered)
     ((db :pointer-void)
@@ -842,33 +828,33 @@ exists and EXISTS-ERROR-P is NIL."
 	   (throw 'transaction transaction))
 	  (t (error 'bdb-db-error :errno errno)))))
 
-(def-function ("db_put_raw" %db-put)
-    ((db :pointer-void)
-     (txn :pointer-void)
-     (key :cstring)
-     (key-size :unsigned-int)
-     (value :cstring)
-     (value-size :unsigned-int)
-     (flags :unsigned-int))
-  :returning :int)
-
-(defun db-put (db key value &key (transaction (txn-default *current-transaction*)))
+(defun db-put (db key value &key (transaction (txn-default *current-transaction*)) exists-error-p)
   "Put a key / value pair into a DB.  The pair are strings."
   (declare (type pointer-void db transaction)
+           (type boolean exists-error-p)
            (type string key value))
-  (let* ((key (encode-string key))
-         (key-size (length key))
-         (value (encode-string value))
-         (value-size (length value)))
-    (declare (type string key value) (type fixnum key-size value-size))
-    (with-cstrings ((key key) (value value))
-      (with-db-errno transaction
-          (%db-put db transaction key key-size value value-size 0)))))
+  (let* ((key-buffer-stream (string-to-buffer-stream key))
+         (value-buffer-stream (string-to-buffer-stream value)))
+    (declare (type buffer-stream key-buffer-stream value-buffer-stream))
+    (let ((errno
+           (%db-put-buffered db transaction
+                             (buffer-stream-buffer key-buffer-stream)
+                             (buffer-stream-size key-buffer-stream)
+                             (buffer-stream-buffer value-buffer-stream)
+                             (buffer-stream-size value-buffer-stream)
+                             0)))
+      (declare (type fixnum errno))
+      (cond ((= errno 0) t)
+            ((and (= errno DB_KEYEXIST) (not exists-error-p))
+             nil)
+            ((or (= errno DB_LOCK_DEADLOCK) (= errno DB_LOCK_NOTGRANTED))
+             (throw 'transaction transaction))
+            (t (error 'bdb-db-error :errno errno))))))
 
 (def-function ("db_exists" %db-exists)
     ((db :pointer-void)
      (txn :pointer-void)
-     (key :cstring)
+     (key array-or-pointer-char)
      (key-size :unsigned-int)
      (flags :unsigned-int))
   :returning :int)
@@ -877,21 +863,21 @@ exists and EXISTS-ERROR-P is NIL."
   "check whether a key exist in a DB.  The key is a
 string.  T on exist, NIL if the key wasn't found."
   (declare (type pointer-void db transaction) (type string key))
-  (let* ((key (encode-string key))
-         (key-size (length key)))
-    (declare (type string key) (type fixnum key-size))
-    (with-cstrings ((key key))
-      (let ((errno
-             (%db-exists db transaction key key-size 0)))
-        (declare (type fixnum errno))
-        (cond ((= errno 0) t)
-              ((or (= errno DB_NOTFOUND)
-                   (= errno DB_KEYEMPTY))
-               nil)
-              ((or (= errno DB_LOCK_DEADLOCK)
-                   (= errno DB_LOCK_NOTGRANTED))
-               (throw 'transaction transaction))
-              (t (error 'bdb-db-error :errno errno)))))))
+  (let* ((key-buffer-stream (string-to-buffer-stream key)))
+    (declare (type buffer-stream key))
+    (let ((errno (%db-exists db transaction
+                             (buffer-stream-buffer key-buffer-stream)
+                             (buffer-stream-size key-buffer-stream)
+                             0)))
+      (declare (type fixnum errno))
+      (cond ((= errno 0) t)
+            ((or (= errno DB_NOTFOUND)
+                 (= errno DB_KEYEMPTY))
+             nil)
+            ((or (= errno DB_LOCK_DEADLOCK)
+                 (= errno DB_LOCK_NOTGRANTED))
+             (throw 'transaction transaction))
+            (t (error 'bdb-db-error :errno errno))))))
 
 (def-function ("db_del" %db-delete-buffered)
     ((db :pointer-void)
@@ -922,34 +908,26 @@ found."
 	   (throw 'transaction transaction))
 	  (t (error 'bdb-db-error :errno errno)))))
 
-(def-function ("db_del" %db-delete)
-    ((db :pointer-void)
-     (txn :pointer-void)
-     (key :cstring)
-     (key-size :unsigned-int)
-     (flags :unsigned-int))
-  :returning :int)
-
 (defun db-delete (db key &key (transaction (txn-default *current-transaction*)))
   "Delete a key / value pair from a DB.  The key is a
 string.  T on success, NIL if the key wasn't found."
   (declare (type pointer-void db transaction) (type string key))
-  (let* ((key (encode-string key))
-         (key-size (length key)))
-    (declare (type string key) (type fixnum key-size))
-    (with-cstrings ((key key))
-      (let ((errno
-             (%db-delete db transaction key
-                         key-size 0)))
-        (declare (type fixnum errno))
-        (cond ((= errno 0) t)
-              ((or (= errno DB_NOTFOUND)
-                   (= errno DB_KEYEMPTY))
-               nil)
-              ((or (= errno DB_LOCK_DEADLOCK)
-                   (= errno DB_LOCK_NOTGRANTED))
-               (throw 'transaction transaction))
-              (t (error 'bdb-db-error :errno errno)))))))
+  (let* ((key-buffer-stream (string-to-buffer-stream key)))
+    (declare (type buffer-stream key-buffer-stream))
+    (let ((errno
+           (%db-delete-buffered db transaction
+                                (buffer-stream-buffer key-buffer-stream)
+                                (buffer-stream-size key-buffer-stream)
+                       0)))
+      (declare (type fixnum errno))
+      (cond ((= errno 0) t)
+            ((or (= errno DB_NOTFOUND)
+                 (= errno DB_KEYEMPTY))
+             nil)
+            ((or (= errno DB_LOCK_DEADLOCK)
+                 (= errno DB_LOCK_NOTGRANTED))
+             (throw 'transaction transaction))
+            (t (error 'bdb-db-error :errno errno))))))
 
 (def-function ("db_del_kv" %db-delete-kv)
     ((db :pointer-void)

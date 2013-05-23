@@ -14,7 +14,15 @@
     (dotimes (i (+ min (random (- max min))))
       (format s "~c" (aref *chars* (random (length *chars*)))))))
 
-(defun test-get-put (&key (verbose t))
+(register-store :test-hash #'(lambda (o) (loop for key being the hash-keys of o
+                                          using (hash-value value)
+                                          collect (cons key value)))
+                #'(lambda (o) (loop with hash = (make-hash-table)
+                               for (key . value) in o
+                               do (setf (gethash key hash) value)
+                               finally (return hash))))
+
+(defun test-get-put (&key (times 128) (verbose t))
   (let ((db (db-create))
         (db-file "/tmp/bdb-get-put.db"))
     ;; (delete-file db-file)
@@ -22,7 +30,7 @@
     (when verbose
       (format t "db-put"))
     (loop with time = (get-universal-time)
-          for i from 1 to 256
+          for i from 1 to times
           for key = (random-string)
           for value = (random-string :min 1024 :max (* 1024 1024))
           do
@@ -41,6 +49,33 @@
     (format t "done")
     (db-close db)
     t))
+(defun test-object-get-put (&key (verbose t))
+  (let ((db (dopen "/tmp/bdb-object-get-put.db")))
+    (when verbose
+      (format t "test object store."))
+    (dput db '(:a b) '(c d e))
+    (assert (dexists db '(:a b)))
+    (assert (equal '(c d e) (dget db '(:a b))))
+    (when verbose
+      (format t "~%"))
+
+    (when verbose
+      (format t "test store category."))
+    (let ((hash (make-hash-table))
+          (key '(:test hash)))
+      (setf (gethash :测试 hash) #1="测试一下")
+      (setf (gethash :ab hash) #2="测试ab")
+      (dput db key hash :category :test-hash)
+      (assert (dexists db key))
+      (let ((stored-hash (dget db key :category :test-hash)))
+        (assert (string= #1# (gethash :测试 stored-hash)))
+        (assert (string= #2# (gethash :ab stored-hash))))
+      (ddel db key)
+      (assert (not (dexists db key))))
+    (when verbose
+      (format t "~%"))
+    (dclose db)
+    t))
 
 
 (defun run-all-tests (&key (verbose t))
@@ -52,6 +87,7 @@ above."
                  `(unless (progn ,@body)
                     (setq successp nil))))
       (run-test-suite (test-get-put :verbose verbose))
+      (run-test-suite (test-object-get-put :verbose verbose))
       (format t "~2&~:[Some tests failed~;All tests passed~]." successp)
       successp)))
             
