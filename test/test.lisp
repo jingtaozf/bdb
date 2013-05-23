@@ -1,4 +1,4 @@
-;;; -*- Mode: LISP; Syntax: COMMON-LISP; Package: BDB-TEST; Base: 10 -*-
+;;; -*- encoding:utf-8;Mode: LISP; Syntax: COMMON-LISP; Package: BDB-TEST; Base: 10 -*-
 
 (in-package :bdb-test)
 

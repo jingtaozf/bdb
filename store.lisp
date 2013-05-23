@@ -4,8 +4,8 @@
 ;; Description: store and restore lisp objections
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 14:44:06(+0800)
-;; Last-Updated: 2013.05.23 11:49:37(+0800)
-;;     Update #: 67
+;; Last-Updated: 2013.05.23 14:25:09(+0800)
+;;     Update #: 68
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Commentary:
@@ -22,7 +22,7 @@
   (setf (get 'bdb-store-category category) nil)
   category)
 (defun get-store-category (category)
-  (get 'bdb-store-category category
+  (get 'bdb-store-category category))
 
 (defun dopen (db-file)
   (let ((db (db-create)))

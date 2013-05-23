@@ -18,7 +18,8 @@
   ((:file "memutil")
    (:file "package")
    (:file "berkeley-constants")
-   (:file "berkeley-db"))
+   (:file "berkeley-db")
+   (:file "store"))
   :serial t
   :depends-on (:uffi :flexi-streams))
 
