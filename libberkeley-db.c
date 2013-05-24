@@ -168,6 +168,13 @@ int db_env_txn_checkpoint(DB_ENV *dbenv, u_int32_t kbyte, u_int32_t min,
   return dbenv->txn_checkpoint(dbenv, kbyte, min, flags);
 }
 
+void db_env_set_error_file(DB_ENV *dbenv, char *filename) {
+  return dbenv->set_errfile(dbenv, fopen(filename, "w+"));
+}
+
+void db_env_set_data_dir(DB_ENV *dbenv, char *data_dir) {
+  return dbenv->set_data_dir(dbenv, fopen(filename, "w+"));
+}
 
 /* Database */
 

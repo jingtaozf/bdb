@@ -523,13 +523,22 @@
 	    :flags (force)
 	    :documentation "Make a checkpoint.")
 
-;;(def-function ("db_set_error_file" %db-set-error-file)
-;;    ((db :pointer-void)
-;;     (file :cstring)))
+(def-function ("db_env_set_error_file" %db-env-set-error-file)
+   ((db :pointer-void)
+    (file :cstring)))
 
-;;(defun db-set-error-file (db filename)
-;;  (with-cstrings ((fname filename))
-;;    (%db-set-error-file db fname)))
+(defun db-env-set-error-file (env filename)
+ (with-cstrings ((fname filename))
+   (%db-env-set-error-file env fname)))
+
+
+(def-function ("db_set_error_file" %db-set-error-file)
+   ((db :pointer-void)
+    (file :cstring)))
+
+(defun db-set-error-file (db filename)
+ (with-cstrings ((fname filename))
+   (%db-set-error-file db fname)))
 
 ;;;; Database
 
