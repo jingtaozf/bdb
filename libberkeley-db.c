@@ -172,8 +172,8 @@ void db_env_set_error_file(DB_ENV *dbenv, char *filename) {
   return dbenv->set_errfile(dbenv, fopen(filename, "w+"));
 }
 
-void db_env_set_data_dir(DB_ENV *dbenv, char *data_dir) {
-  return dbenv->set_data_dir(dbenv, fopen(filename, "w+"));
+void db_env_set_data_dir(DB_ENV *dbenv, const char *data_dir) {
+  dbenv->set_data_dir(dbenv, data_dir);
 }
 
 /* Database */
