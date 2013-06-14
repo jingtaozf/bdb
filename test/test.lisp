@@ -1,4 +1,12 @@
-;;; -*- encoding:utf-8;Mode: LISP; Syntax: COMMON-LISP; Package: BDB-TEST; Base: 10 -*-
+;;; -*- encoding:utf-8 Mode: LISP; Syntax: COMMON-LISP; Base: 10  -*- ---
+;;
+;; Filename: test.lisp
+;; Description: test routines for bdb.
+;; Author: Jingtao Xu <jingtaozf@gmail.com>
+;; Created: 2013.05.22 16:13:00(+0800)
+;; Last-Updated: 2013.06.14 13:20:41(+0800)
+;;     Update #: 2
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :bdb-test)
 

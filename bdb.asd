@@ -1,4 +1,12 @@
-;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10 -*-
+;;; -*- encoding:utf-8 Mode: LISP; Syntax: COMMON-LISP; Base: 10  -*- ---
+;;
+;; Filename: bdb.asd
+;; Description: asdf definition.
+;; Author: Jingtao Xu <jingtaozf@gmail.com>
+;; Created: 2013.05.22 16:13:00(+0800)
+;; Last-Updated: 2013.06.14 13:30:48(+0800)
+;;     Update #: 3
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (in-package :cl-user)
 
 (defpackage bdb-system
@@ -15,10 +23,11 @@
   :description "Object database for Common Lisp"
   :long-description "Common lisp interface for Berkeley DB, for sbcl and lispworks."
   :components
-  ((:file "memutil")
-   (:file "package")
-   (:file "berkeley-constants")
-   (:file "berkeley-db")
+  ((:file "package")
+   (:file "constants")
+   (:file "fli")
+   (:file "memutil")
+   (:file "db")
    (:file "store"))
   :serial t
   :depends-on (:uffi :flexi-streams))

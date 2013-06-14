@@ -1,21 +1,19 @@
-;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10 -*-
-;;;
-;;; berkeley-db.lisp -- FFI interface to Berkeley DB
-;;;
-;;; Initial version 9/10/2004 by Ben Lee
-;;; <blee@common-lisp.net>
-;;;
+;;; -*- encoding:utf-8 Mode: LISP; Syntax: COMMON-LISP; Base: 10  -*- ---
+;;
+;; Filename: package.lisp
+;; Description: package definition.
+;; Initial version 8/26/2004 by Ben Lee<blee@common-lisp.net>
+;; Author: Jingtao Xu <jingtaozf@gmail.com>
+;; Created: 2013.05.22 16:13:00(+0800)
+;; Last-Updated: 2013.06.14 13:30:30(+0800)
+;;     Update #: 5
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :cl-user)
 
 (defpackage bdb
-  (:documentation "A low-level UFFI-based interface to Berkeley
-   DB to implement the elephant front-end framework.  Uses the
-   libelebdb.c wrapper.  Partly intended to be usable outside
-   Elephant, but with some magic for Elephant.  In general there
-   is a 1-1 mapping from functions here and functions in
-   Berkeley DB, so refer to their documentation for details.")
-  (:use common-lisp uffi bdb-memutil)
+  (:documentation "A UFFI-based interface to Berkeley DB")
+  (:use common-lisp uffi)
   #+cmu
   (:use alien)
   #+sbcl

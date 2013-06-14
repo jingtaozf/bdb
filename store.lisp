@@ -4,8 +4,8 @@
 ;; Description: store and restore lisp objections
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 14:44:06(+0800)
-;; Last-Updated: 2013.05.24 09:49:14(+0800)
-;;     Update #: 69
+;; Last-Updated: 2013.05.24 13:09:20(+0800)
+;;     Update #: 70
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Commentary:

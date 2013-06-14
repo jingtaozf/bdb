@@ -1,11 +1,16 @@
-/*
-;;;
-;;; libsleepycat.c -- C wrappers for Sleepycat for FFI
-;;;
-;;; Initial version 8/26/2004 by Ben Lee
-;;; <blee@common-lisp.net>
-;;;
-*/
+/** Copyright (C) 2013 jingtao.net
+ *
+ * Filename: test.cpp
+ * Description: C wrappers for FFI of berkeley db
+ * Initial version 8/26/2004 by Ben Lee <blee@common-lisp.net>
+ * Author: Jingtao Xu <jingtaozf@gmail.com>
+ * Created: 2013.06.14 13:21:48(+0800)
+ * Last-Updated:
+ *     Update #: 1
+ *
+ * Commentary:
+ *
+ **/
 
 #include <stdint.h>
 #include <stdio.h>
