@@ -5,7 +5,7 @@
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.06.14 11:20:05(+0800)
 ;; Last-Updated:
-;;     Update #: 41
+;;     Update #: 44
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Commentary:
@@ -21,9 +21,7 @@
   (unless *load-library-p*
     (let ((root (namestring (asdf:component-pathname (asdf:find-system "bdb")))))
       (asdf:run-shell-command
-       (format nil "cd ~a && gcc -shared -fPIC -o libmemutil.so libmemutil.c && ~
-                    gcc -shared -fPIC -ldb-4.8 -o libbdb.so libbdb.c" root))
-      (uffi:load-foreign-library (format nil "~alibmemutil.so" root) :module :libmemutil)
+       (format nil "gcc -shared -fPIC -ldb-4.8 -o libbdb.so libbdb.c" root))
       (uffi:load-foreign-library (format nil "~alibbdb.so" root) :module :libbdb)
       (setf *load-library-p* t))))
 (load-library-if-necessary)
