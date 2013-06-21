@@ -4,8 +4,8 @@
 ;; Description: fli db function wrappers.
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 16:13:00(+0800)
-;; Last-Updated: 2013.06.14 13:17:19(+0800)
-;;     Update #: 2
+;; Last-Updated: 2013.06.21 16:13:40(+0800)
+;;     Update #: 3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :bdb)
@@ -198,7 +198,7 @@ is found, NIL is returned."
 string.  T on exist, NIL if the key wasn't found."
   (declare (type pointer-void db transaction) (type string key))
   (let* ((key-buffer-stream (string-to-buffer-stream key)))
-    (declare (type buffer-stream key))
+    (declare (type buffer-stream key-buffer-stream))
     (let ((errno (%db-exists db transaction
                              (buffer-stream-buffer key-buffer-stream)
                              (buffer-stream-size key-buffer-stream)

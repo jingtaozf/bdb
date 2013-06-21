@@ -5,8 +5,8 @@
 ;; Initial version 8/26/2004 by Ben Lee<blee@common-lisp.net>
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 16:13:00(+0800)
-;; Last-Updated: 2013.06.14 13:42:22(+0800)
-;;     Update #: 13
+;; Last-Updated: 2013.06.21 16:12:36(+0800)
+;;     Update #: 14
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :bdb)
@@ -50,8 +50,7 @@
   (setf (buffer-stream-size bs) 0)
   (setf (buffer-stream-position bs) 0)
   (setf (buffer-stream-length bs) 0)
-  (free-foreign-object (buffer-stream-buffer bs))
-  (setf (buffer-stream-buffer bs) nil))
+  (free-foreign-object (buffer-stream-buffer bs)))
 
 (defun resize-buffer-stream (bs length)
   "Resize the underlying buffer of a buffer-stream, copying the old data."

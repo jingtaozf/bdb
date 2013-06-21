@@ -5,7 +5,7 @@
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.06.14 11:20:05(+0800)
 ;; Last-Updated:
-;;     Update #: 44
+;;     Update #: 46
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Commentary:
@@ -468,11 +468,13 @@
 
 (def-function ("db_env_set_error_file" %db-env-set-error-file)
    ((db :pointer-void)
-    (file :cstring)))
+    (file :cstring))
+  :returning :void)
 
 (def-function ("db_set_error_file" %db-set-error-file)
    ((db :pointer-void)
-    (file :cstring)))
+    (file :cstring))
+  :returning :void)
 
 ;;;; Database fli functions
 (eval-when (:compile-toplevel :load-toplevel)
