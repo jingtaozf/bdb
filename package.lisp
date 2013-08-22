@@ -5,8 +5,8 @@
 ;; Initial version 8/26/2004 by Ben Lee<blee@common-lisp.net>
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 16:13:00(+0800)
-;; Last-Updated: 2013.06.14 13:30:30(+0800)
-;;     Update #: 5
+;; Last-Updated: 2013.08.22 16:24:54(+0800)
+;;     Update #: 7
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :cl-user)
@@ -26,6 +26,7 @@
   (:import-from :ccl #:byte-length)
   (:export
    #:load-library-if-necessary
+   #:db-env-close
    #:db-create
    #:db-open
    #:db-close
@@ -37,6 +38,7 @@
    #:register-store
    #:unregister-store
    #:get-store-category
+   #:denv-open
    #:dopen
    #:dclose
    #:dput

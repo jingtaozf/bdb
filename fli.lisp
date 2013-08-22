@@ -5,7 +5,7 @@
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.06.14 11:20:05(+0800)
 ;; Last-Updated:
-;;     Update #: 46
+;;     Update #: 55
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Commentary:
@@ -21,7 +21,7 @@
   (unless *load-library-p*
     (let ((root (namestring (asdf:component-pathname (asdf:find-system "bdb")))))
       (asdf:run-shell-command
-       (format nil "gcc -shared -fPIC -ldb-4.8 -o libbdb.so libbdb.c" root))
+       (format nil "gcc -shared -fPIC -ldb-4.8 -o ~alibbdb.so ~alibbdb.c" root root))
       (uffi:load-foreign-library (format nil "~alibbdb.so" root) :module :libbdb)
       (setf *load-library-p* t))))
 (load-library-if-necessary)
@@ -467,13 +467,13 @@
 	    :documentation "Make a checkpoint.")
 
 (def-function ("db_env_set_error_file" %db-env-set-error-file)
-   ((db :pointer-void)
+   ((dbenv :pointer-void)
     (file :cstring))
   :returning :void)
 
-(def-function ("db_set_error_file" %db-set-error-file)
-   ((db :pointer-void)
-    (file :cstring))
+(def-function ("db_env_set_data_dir" %db-env-set-data-dir)
+   ((dbenv :pointer-void)
+    (data-dir :cstring))
   :returning :void)
 
 ;;;; Database fli functions
@@ -512,7 +512,8 @@
 		   (file +NULL-CHAR+)
 		   (database #+lispworks nil #-lispworks +NULL-CHAR+)
 		   (type DB-UNKNOWN)
-		   (mode #o640))
+		   (mode 416);#o640
+                   )
 	    :cstrings (file database)
 	    :transaction transaction
 	    :documentation "Open a DB handle.  If you want transactions, be sure to open the handle with a transaction (or auto-commit.)")
@@ -577,6 +578,11 @@ and DUP-SORT.")
     ((db :pointer-void)
      (flags :unsigned-int :out))
   :returning :int)
+
+(def-function ("db_set_error_file" %db-set-error-file)
+   ((db :pointer-void)
+    (file :cstring))
+  :returning :void)
 
 ;;;; Accessors fli functions
 (def-function ("db_get_raw" %db-get-key-buffered)

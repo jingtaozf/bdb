@@ -4,8 +4,8 @@
 ;; Description: test routines for bdb.
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 16:13:00(+0800)
-;; Last-Updated: 2013.06.14 13:20:41(+0800)
-;;     Update #: 2
+;; Last-Updated: 2013.08.22 16:24:37(+0800)
+;;     Update #: 4
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :bdb-test)
@@ -58,7 +58,8 @@
     (db-close db)
     t))
 (defun test-object-get-put (&key (verbose t))
-  (let ((db (dopen "/tmp/bdb-object-get-put.db")))
+  (let* ((env (denv-open "/tmp/"))
+         (db (dopen "/tmp/bdb-object-get-put.db" env)))
     (when verbose
       (format t "test object store."))
     (dput db '(:a b) '(c d e))
@@ -83,6 +84,7 @@
     (when verbose
       (format t "~%"))
     (dclose db)
+    (db-env-close env)
     t))
 
 

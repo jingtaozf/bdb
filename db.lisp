@@ -4,8 +4,8 @@
 ;; Description: fli db function wrappers.
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 16:13:00(+0800)
-;; Last-Updated: 2013.06.21 16:13:40(+0800)
-;;     Update #: 3
+;; Last-Updated: 2013.08.22 16:17:23(+0800)
+;;     Update #: 5
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :bdb)
@@ -79,10 +79,10 @@
  (with-cstrings ((fname filename))
    (%db-env-set-error-file env fname)))
 
-
-(defun db-set-error-file (db filename)
+(defun db-env-set-data-dir (env filename)
  (with-cstrings ((fname filename))
-   (%db-set-error-file db fname)))
+   (%db-env-set-data-dir env fname)))
+
 
 ;;;; Database
 
@@ -101,6 +101,11 @@
       (%db-get-flags db)
     (if (= errno 0) flags
 	(error 'bdb-db-error :errno errno))))
+
+(defun db-set-error-file (db filename)
+ (with-cstrings ((fname filename))
+   (%db-set-error-file db fname)))
+
 
 ;;;; utf-8 support
 (defun string-to-buffer-stream (string)

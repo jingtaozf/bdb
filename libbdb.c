@@ -6,7 +6,7 @@
  * Author: Jingtao Xu <jingtaozf@gmail.com>
  * Created: 2013.06.14 13:21:48(+0800)
  * Last-Updated:
- *     Update #: 1
+ *     Update #: 4
  *
  * Commentary:
  *
@@ -175,6 +175,10 @@ int db_env_txn_checkpoint(DB_ENV *dbenv, u_int32_t kbyte, u_int32_t min,
 
 void db_env_set_error_file(DB_ENV *dbenv, char *filename) {
   return dbenv->set_errfile(dbenv, fopen(filename, "w+"));
+}
+
+void db_env_set_error_prefix(DB_ENV *dbenv, char *prefix) {
+  return dbenv->set_errpfx(dbenv, fopen(filename, "w+"));
 }
 
 void db_env_set_data_dir(DB_ENV *dbenv, const char *data_dir) {

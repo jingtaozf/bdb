@@ -4,8 +4,8 @@
 ;; Description: store and restore lisp objections
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 14:44:06(+0800)
-;; Last-Updated: 2013.05.24 13:09:20(+0800)
-;;     Update #: 70
+;; Last-Updated: 2013.08.22 16:21:55(+0800)
+;;     Update #: 78
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Commentary:
@@ -24,8 +24,15 @@
 (defun get-store-category (category)
   (get 'bdb-store-category category))
 
-(defun dopen (db-file)
-  (let ((db (db-create)))
+(defun denv-open (data-dir &key (error-file (format nil "~a/db-err.log" data-dir)))
+  (let ((env (db-env-create)))
+    (db-env-set-error-file env error-file)
+    (db-env-set-data-dir env data-dir)
+    (db-env-open env data-dir :create t :init-log t :init-mpool t)
+    env))
+
+(defun dopen (db-file &optional (dbenv +NULL-VOID+))
+  (let ((db (db-create dbenv)))
     (db-open db :file db-file :type DB-BTREE :create t :mode 0)
     db))
 (defun dclose (db)
