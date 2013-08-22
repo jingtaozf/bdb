@@ -4,8 +4,8 @@
 ;; Description: test routines for bdb.
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 16:13:00(+0800)
-;; Last-Updated: 2013.08.22 16:24:37(+0800)
-;;     Update #: 4
+;; Last-Updated: 2013.08.22 16:42:54(+0800)
+;;     Update #: 9
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :bdb-test)
@@ -17,7 +17,7 @@
                       append (loop for i from (char-code from) to (char-code to)
                                    collect (code-char i)))))
       (make-array (length chars) :initial-contents chars)))
-(defun random-string (&key (min 1) (max 1024))
+(defun random-string (&key (min 1) (max 256))
   (with-output-to-string (s)
     (dotimes (i (+ min (random (- max min))))
       (format s "~c" (aref *chars* (random (length *chars*)))))))
@@ -30,7 +30,7 @@
                                do (setf (gethash key hash) value)
                                finally (return hash))))
 
-(defun test-get-put (&key (times 128) (verbose t))
+(defun test-get-put (&key (times 16) (verbose t))
   (let ((db (db-create))
         (db-file "/tmp/bdb-get-put.db"))
     ;; (delete-file db-file)
@@ -40,11 +40,11 @@
     (loop with time = (get-universal-time)
           for i from 1 to times
           for key = (random-string)
-          for value = (random-string :min 1024 :max (* 1024 1024))
+          for value = (random-string :min 1024 :max (* 100 1024))
           do
        (when verbose
          (format t ".")
-         (when (= 0 (mod i 20))
+         (when (= 0 (mod i 8))
            (format t "~D(about ~D millseconds one loop)~%db-put" i (* (/ 1000 20) (- (get-universal-time) time)))
            (setf time (get-universal-time))))
        (db-put db key value)
@@ -54,7 +54,7 @@
        (when (= 0 (mod i 5))
          (db-delete db key)
          (assert (not (db-exists db key)))))
-    (format t "done~%")
+    (format t "...done~%")
     (db-close db)
     t))
 (defun test-object-get-put (&key (verbose t))
