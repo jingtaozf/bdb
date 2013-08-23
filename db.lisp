@@ -4,8 +4,8 @@
 ;; Description: fli db function wrappers.
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 16:13:00(+0800)
-;; Last-Updated: 2013.08.22 16:17:23(+0800)
-;;     Update #: 5
+;; Last-Updated: 2013.08.23 15:22:28(+0800)
+;;     Update #: 27
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :bdb)
@@ -121,6 +121,12 @@
   (loop with buf = (make-array (buffer-stream-size stream) :element-type 'flexi-streams:octet)
         for i from 0 to (1- (buffer-stream-size stream))
         do (setf (aref buf i) (buffer-read-byte stream))
+        finally (return (flexi-streams:octets-to-string buf :external-format :utf-8))))
+
+(defun buffer-to-string (buffer buffer-size)
+  (loop with buf = (make-array buffer-size :element-type 'flexi-streams:octet)
+        for i from 0 to (1- buffer-size)
+        do (setf (aref buf i) (deref-array buffer '(:array :unsigned-char) i))
         finally (return (flexi-streams:octets-to-string buf :external-format :utf-8))))
 
 ;;;; Accessors
@@ -241,32 +247,58 @@ string.  T on success, NIL if the key wasn't found."
              (throw 'transaction transaction))
             (t (error 'bdb-db-error :errno errno))))))
 
-;;;; Compaction for BDB 4.4
+;;;; Cursor
 
-(defun db-compact (db start stop end &key (transaction (txn-default *current-transaction*))
-		   freelist-only free-space)
-  (declare (type pointer-void db transaction)
-	   (type boolean freelist-only free-space))
-  (loop
-       for end-length fixnum = (buffer-stream-length end)
-       do
-	 (multiple-value-bind (errno end-size)
-	     (%db-compact db transaction
-			  (if start (buffer-stream-buffer start) 0)
-			  (if start (buffer-stream-size start) 0)
-			  (if stop (buffer-stream-buffer stop) 0)
-			  (if stop (buffer-stream-size stop) 0)
-			  (flags :freelist-only freelist-only :free-space free-space)
-			  (buffer-stream-buffer end)
-			  (buffer-stream-length end))
-	   (declare (type fixnum errno end-size))
-	   (cond ((= errno 0)
-		  (setf (buffer-stream-size end) end-size)
-		  (return-from db-compact (the buffer-stream end)))
-		 ((or (= errno DB_NOTFOUND) (= errno DB_KEYEMPTY))
-		  (return-from db-compact nil))
-		 ((or (= errno DB_LOCK_DEADLOCK) (= errno DB_LOCK_NOTGRANTED))
-		  (throw 'transaction transaction))
-		 ((> end-size end-length)
-		  (resize-buffer-stream-no-copy end end-size))
-		 (t (error 'bdb-db-error :errno errno))))))
+(defun db-cursor (db &key (transaction (txn-default *current-transaction*))
+                     degree-2 read-committed dirty-read read-uncommitted)
+  "Create a cursor."
+  (declare (type pointer-void db)
+	   (type boolean degree-2 read-committed dirty-read read-uncommitted))
+  (multiple-value-bind (curs errno)
+      (%db-cursor db transaction
+                  (flags :degree-2 (or degree-2 read-committed)
+                         :dirty-read (or dirty-read read-uncommitted)))
+    (declare (type pointer-void curs)
+             (type fixnum errno))
+    (if (= errno 0)
+      curs
+      (error 'bdb-db-error :errno errno))))
+
+(wrap-errno db-cursor-close (cursor) :documentation "Close a cursor.")
+
+(defun db-cursor-delete (cursor)
+  "Delete by cursor."
+  (declare (type pointer-void cursor))
+  (let ((errno (%db-cursor-delete cursor 0)))
+    (declare (type fixnum errno))
+    (cond ((= errno 0) t)
+	  ((or (= errno DB_NOTFOUND)
+	       (= errno DB_KEYEMPTY))
+	   nil)
+	  ((or (= errno DB_LOCK_DEADLOCK)
+	       (= errno DB_LOCK_NOTGRANTED))
+	   (throw 'transaction *current-transaction*))
+	  (t (error 'bdb-db-error :errno errno)))))
+
+(defun db-cursor-duplicate (cursor &key (position t))
+  "Duplicate a cursor."
+  (declare (type pointer-void cursor))
+  (let ((errno-buffer (allocate-foreign-object :int 1)))
+    (declare (type pointer-int errno-buffer))
+    (let* ((newc (%db-cursor-dup cursor (flags :position position)
+				 errno-buffer))
+	   (errno (deref-array errno-buffer '(:array :int) 0)))
+      (declare (type pointer-void newc)
+	       (type fixnum errno))
+      (if (= errno 0) newc
+	  (error 'bdb-db-error :errno errno)))))
+
+(defun db-cursor-get (cursor)
+  (multiple-value-bind (errno key key-size buffer buffer-size)
+      (%db-cursor-get cursor DB_NEXT)
+    (cond ((= errno 0)
+           (values (buffer-to-string key key-size)
+                   (buffer-to-string buffer buffer-size)))
+          ((= errno DB_NOTFOUND)
+           (values))
+          (t (error 'bdb-db-error :errno errno)))))

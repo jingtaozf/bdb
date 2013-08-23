@@ -5,8 +5,8 @@
 ;; Initial version 8/26/2004 by Ben Lee<blee@common-lisp.net>
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 16:13:00(+0800)
-;; Last-Updated: 2013.08.22 16:24:54(+0800)
-;;     Update #: 7
+;; Last-Updated: 2013.08.23 15:45:16(+0800)
+;;     Update #: 10
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :cl-user)
@@ -45,4 +45,10 @@
    #:dget
    #:dexists
    #:ddel
+   #:db-cursor
+   #:db-cursor-close
+   #:db-cursor-delete
+   #:db-cursor-duplicate
+   #:db-cursor-get
+   #:dcursor-get
    ))

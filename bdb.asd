@@ -4,8 +4,8 @@
 ;; Description: asdf definition.
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 16:13:00(+0800)
-;; Last-Updated: 2013.06.14 13:30:48(+0800)
-;;     Update #: 3
+;; Last-Updated: 2013.08.23 13:54:24(+0800)
+;;     Update #: 4
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (in-package :cl-user)
 
@@ -25,6 +25,7 @@
   :components
   ((:file "package")
    (:file "constants")
+   (:file "utils")
    (:file "fli")
    (:file "memutil")
    (:file "db")

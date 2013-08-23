@@ -5,7 +5,7 @@
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.06.14 11:20:05(+0800)
 ;; Last-Updated:
-;;     Update #: 55
+;;     Update #: 71
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Commentary:
@@ -17,14 +17,21 @@
 
 ;;;; load library
 (defvar *load-library-p* nil)
+#+lispworks(defvar *reloaded-times* 0)
 (defun load-library-if-necessary ()
   (unless *load-library-p*
     (let ((root (namestring (asdf:component-pathname (asdf:find-system "bdb")))))
       (asdf:run-shell-command
-       (format nil "gcc -shared -fPIC -ldb-4.8 -o ~alibbdb.so ~alibbdb.c" root root))
+       (format nil "gcc -shared -fPIC -ldb-4.8 -o \"~alibbdb.so\" \"~alibbdb.c\"" root root))
       (uffi:load-foreign-library (format nil "~alibbdb.so" root) :module :libbdb)
       (setf *load-library-p* t))))
 (load-library-if-necessary)
+
+#+lispworks
+(defun reload-library ()
+  (%close-foreign-library :libbdb)
+  (setf *load-library-p* nil)
+  (load-library-if-necessary))
 
 ;;;; utilities.
 
@@ -229,7 +236,7 @@
 ;; makes flags into keywords
 ;; makes keyword args, cstring wrappers
 
-(eval-when (:compile-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-wrapper-args (args flags keys)
     (if (or flags keys)
 	(append (remove-keys (remove 'flags args) keys)
@@ -652,7 +659,7 @@ and DUP-SORT.")
     ((db :pointer-void)
      (txn :pointer-void)
      (flags :unsigned-int)
-     (errnop (* :int)))
+     (errnop :int :out))
   :returning :pointer-void)
 
 (def-function ("db_cursor_close" %db-cursor-close)
@@ -671,6 +678,16 @@ and DUP-SORT.")
      (flags :unsigned-int)
      (errnop (* :int)))
   :returning :pointer-void)
+
+(def-function ("db_cursor_get" %db-cursor-get)
+    ((cursor :pointer-void)
+     (flags :unsigned-int)
+     (key array-or-pointer-char :out)
+     (key-size :unsigned-int :out)
+     (buffer array-or-pointer-char :out)
+     (buffer-size :unsigned-int :out)
+     )
+  :returning :int)
 
 (def-function ("db_cursor_get_raw" %db-cursor-get-key-buffered)
     ((cursor :pointer-void)

@@ -1,4 +1,3 @@
 # -*- encoding:utf-8 Mode: org; -*- ---
-* TODO
-** setup db environment before open db file
-http://blog.sina.com.cn/s/blog_502c8cc40100yqkj.html
+* Reference with sample codes
+http://www.stanford.edu/class/cs276a/projects/docs/berkeleydb/reftoc.html

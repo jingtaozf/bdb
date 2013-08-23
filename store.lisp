@@ -4,8 +4,8 @@
 ;; Description: store and restore lisp objections
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 14:44:06(+0800)
-;; Last-Updated: 2013.08.22 16:21:55(+0800)
-;;     Update #: 78
+;; Last-Updated: 2013.08.23 15:32:30(+0800)
+;;     Update #: 81
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Commentary:
@@ -73,3 +73,10 @@
   (let ((key-string (with-output-to-string (stream)
                       (write key :stream stream))))
     (db-delete db key-string)))
+
+(defun dcursor-get (cursor)
+  (multiple-value-bind (key value)
+      (db-cursor-get cursor)
+    (when (and key value)
+      (values (ignore-errors (read-from-string key nil nil))
+              (ignore-errors (read-from-string value nil nil))))))

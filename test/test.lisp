@@ -4,8 +4,8 @@
 ;; Description: test routines for bdb.
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 16:13:00(+0800)
-;; Last-Updated: 2013.08.22 16:42:54(+0800)
-;;     Update #: 9
+;; Last-Updated: 2013.08.23 15:37:17(+0800)
+;;     Update #: 21
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :bdb-test)
@@ -83,6 +83,29 @@
       (assert (not (dexists db key))))
     (when verbose
       (format t "~%"))
+    (dclose db)
+    (db-env-close env)
+    t))
+(defun test-cursor (&key (verbose t))
+  (let* ((env (denv-open "/tmp/"))
+         (db (dopen "/tmp/bdb-cursor.db" env)))
+    (when verbose
+      (format t "test cursor."))
+    (loop for i from 1 to 9
+          do (dput db `(:a ,i) `(c "d" ,i e)))
+    (loop with cursor = (db-cursor db)
+          for i from 1
+          do
+       (multiple-value-bind (key value)
+           (dcursor-get cursor)
+         (unless key
+           (loop-finish))
+         (assert (equal key `(:a ,i)))
+         (assert (equal value `(c "d" ,i e))))
+       finally (db-cursor-close cursor)
+               (assert (= i 10)))
+    (when verbose
+      (format t "done~%"))
     (dclose db)
     (db-env-close env)
     t))

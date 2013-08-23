@@ -6,7 +6,7 @@
  * Author: Jingtao Xu <jingtaozf@gmail.com>
  * Created: 2013.06.14 13:21:48(+0800)
  * Last-Updated:
- *     Update #: 4
+ *     Update #: 22
  *
  * Commentary:
  *
@@ -177,8 +177,10 @@ void db_env_set_error_file(DB_ENV *dbenv, char *filename) {
   return dbenv->set_errfile(dbenv, fopen(filename, "w+"));
 }
 
+char g_prefix[1024];
 void db_env_set_error_prefix(DB_ENV *dbenv, char *prefix) {
-  return dbenv->set_errpfx(dbenv, fopen(filename, "w+"));
+    strcpy(g_prefix,prefix);
+    return dbenv->set_errpfx(dbenv, g_prefix);
 }
 
 void db_env_set_data_dir(DB_ENV *dbenv, const char *data_dir) {
@@ -355,6 +357,21 @@ DBC * db_cursor_dup(DBC *cursor, u_int32_t flags, int *errno) {
   DBC *dup;
   *errno = cursor->c_dup(cursor, &dup, flags);
   return dup;
+}
+
+int db_cursor_get(DBC *cursor,u_int32_t flags,
+                  void **keybuf, u_int32_t *keybuf_size,
+                  void **buffer, u_int32_t *buffer_size) {
+    int ret;
+    DBT DBTKey, DBTValue;
+    memset(&DBTKey, 0, sizeof(DBT));
+    memset(&DBTValue, 0, sizeof(DBT));
+    ret = cursor->c_get(cursor, &DBTKey, &DBTValue, flags);
+    *keybuf = DBTKey.data;
+    *keybuf_size = DBTKey.size;
+    *buffer = DBTValue.data;
+    *buffer_size = DBTValue.size;
+    return ret;
 }
 
 int db_cursor_get_raw(DBC *cursor,
