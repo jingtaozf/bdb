@@ -4,8 +4,8 @@
 ;; Description: store and restore lisp objections
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 14:44:06(+0800)
-;; Last-Updated: 2013.08.23 15:32:30(+0800)
-;;     Update #: 81
+;; Last-Updated: 2013.08.26 11:22:37(+0800)
+;;     Update #: 82
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Commentary:
@@ -80,3 +80,14 @@
     (when (and key value)
       (values (ignore-errors (read-from-string key nil nil))
               (ignore-errors (read-from-string value nil nil))))))
+
+(defmacro with-cursor ((db cursor key value) &body body)
+  `(let ((,cursor (db-cursor ,db)))
+     (unwind-protect
+         (loop do
+           (multiple-value-bind (,key ,value)
+               (dcursor-get ,cursor)
+             (unless (and ,key ,value)
+               (loop-finish))
+             ,@body))
+       (db-cursor-close ,cursor))))

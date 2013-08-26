@@ -5,8 +5,8 @@
 ;; Initial version 8/26/2004 by Ben Lee<blee@common-lisp.net>
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.05.22 16:13:00(+0800)
-;; Last-Updated: 2013.08.23 15:45:16(+0800)
-;;     Update #: 10
+;; Last-Updated: 2013.08.26 11:15:40(+0800)
+;;     Update #: 11
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :cl-user)
@@ -51,4 +51,5 @@
    #:db-cursor-duplicate
    #:db-cursor-get
    #:dcursor-get
+   #:with-cursor
    ))
