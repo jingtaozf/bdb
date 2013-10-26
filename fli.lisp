@@ -5,7 +5,7 @@
 ;; Author: Jingtao Xu <jingtaozf@gmail.com>
 ;; Created: 2013.06.14 11:20:05(+0800)
 ;; Last-Updated:
-;;     Update #: 71
+;;     Update #: 73
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Commentary:
@@ -21,8 +21,11 @@
 (defun load-library-if-necessary ()
   (unless *load-library-p*
     (let ((root (namestring (asdf:component-pathname (asdf:find-system "bdb")))))
-      (asdf:run-shell-command
-       (format nil "gcc -shared -fPIC -ldb-4.8 -o \"~alibbdb.so\" \"~alibbdb.c\"" root root))
+      (if (probe-file #1="/usr/local/lib64/libdb-4.8.so")
+        (uffi:load-foreign-library #1# :module :bdb4.8))
+      (unless (probe-file (format nil "~alibbdb.so" root))
+        (asdf:run-shell-command
+         (format nil "gcc -shared -fPIC -ldb-4.8 -o \"~alibbdb.so\" \"~alibbdb.c\"" root root)))
       (uffi:load-foreign-library (format nil "~alibbdb.so" root) :module :libbdb)
       (setf *load-library-p* t))))
 (load-library-if-necessary)
